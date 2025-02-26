@@ -175,7 +175,7 @@ This project is licensed under the [MIT License](LICENSE).
 Follow our progress or contribute to the project:
 - 🌐 [Website](https://aasanhai.pk)
 - 📧 [Contact Us](mailto:hassanali5120@gmail.com)
-- 📧 [VisionX Partners](https://partners.circle.com/partner/vxchange)
+- 📧 [VisionX Partners](https://www.visionxecosystem.com/)
 
 
 ---
