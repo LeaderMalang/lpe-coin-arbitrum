@@ -24,7 +24,7 @@ module.exports = {
       gas: "auto", // Automatically estimate gas
       gasPrice: "auto", // Automatically estimate gas price
     },
-    bsc_mainnet: {
+    arbi_testnet: {
       url: "https://bsc-dataseed.binance.org",
       accounts: [PRIVATE_KEY],
       gas: "auto",

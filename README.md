@@ -1,107 +1,111 @@
-# VisionX Smart Contracts
+# VisionX Smart Contracts - README
 
 ## Overview
-VisionX is a decentralized ecosystem that integrates **peer-to-peer transactions, micro-lending, staking rewards, and liquidity reinvestment mechanisms** powered by the LPE token. This document provides an overview of the smart contracts and guidelines for integrating them into external systems.
+VisionX is a **P2P microfinance platform** focusing on **secure peer-to-peer transactions, micro-lending, staking, fee reinvestment, and dispute resolution via a DAO**. The ecosystem uses **LPE tokens and USDC** for transactions and governance.
 
 ---
 
-## Smart Contracts
+## Smart Contracts Deployment Order
+1. **LPEToken:** The main token contract required for staking and governance.
+2. **LPEEscrow:** Facilitates **P2P USDC transactions** with a **0.15% fee**.
+3. **LPEMicroLending:** Enables **$25 micro-loans** with a **1.5% origination fee**.
+4. **LPEStaking:** Allows users to **stake LPE for reduced fees**.
+5. **LPEDAO:** Decentralized governance for dispute resolution.
+
+---
+
+## Smart Contracts Details
 
 ### 1. **LPE Token Contract (LPEToken.sol)**
 #### **Features:**
 - **ERC-20 Standard Token** with minting, burning, and pausing functionalities.
-- **Supply Cap:** Maximum supply is enforced.
-- **Scheduled Token Drops:** Users can claim daily rewards.
-- **Referral System:** Users can earn rewards by referring others.
-- **Ownership Transfer:** Admins can transfer ownership.
-- **Streak-Based Rewards:** Users get bonus tokens for daily claims.
-- **Random Drops:** Admins can distribute additional tokens.
+- **Staking Integration:** Reduces fees for staked users.
+- **Burn Mechanism:** **1% annual burn** for unstaked LPE.
+- **DAO Voting:** **1 LPE = 1 Vote** in disputes.
 
 #### **Integration Guide:**
-- Deploy the contract and initialize it with a max supply.
-- Use `mint()` to distribute tokens (requires MINTER_ROLE).
-- Use `claimScheduledDrop()` for daily token drops.
-- Use `referUser(address newUser)` to implement referral rewards.
-- Use `burn(uint256 amount)` to allow token burning.
-- Implement **pausing/unpausing** with `pause()` and `unpause()` functions.
+- Deploy **LPEToken** first.
+- Use `mint(address to, uint256 amount)` for distribution.
+- Use `burn(uint256 amount)` to reduce supply.
+- Implement staking-based fee reductions.
 
 ---
 
-### 2. **Wrapped LPE (wLPE.sol)**
+### 2. **P2P Escrow Contract (LPEEscrow.sol)**
 #### **Features:**
-- **1:1 Wrapping** of LPE into wLPE for DeFi use.
-- **Unwrapping Mechanism:** Convert wLPE back to LPE.
-- **Admin Recovery:** The owner can recover stuck LPE tokens.
+- **USDC Peer-to-Peer Transactions** with **0.15% fee**.
+- **Secure escrow mechanism** to prevent fraud.
+- **Admin-controlled escrow release**.
+- **10% of fees reinvested as USDC gifts** (max **$5/user/year** for VisionX learning).
 
 #### **Integration Guide:**
-- Deploy the contract with the LPE token address.
-- Use `wrap(uint256 amount)` to convert LPE into wLPE.
-- Use `unwrap(uint256 amount)` to redeem LPE tokens.
-- Admins can use `recoverStuckLPE(uint256 amount)` to retrieve misplaced tokens.
+- Use `createEscrow(address receiver, uint256 amount)` to lock USDC in escrow.
+- Use `releaseEscrow(uint256 escrowId)` (admin-only) to complete the trade.
+- Implement `distributeGift(address user, uint256 amount)` for USDC rewards.
 
 ---
 
-### 3. **P2P Escrow Contract (LPEEscrow.sol)**
+### 3. **Micro-Lending Escrow Contract (LPEMicroLending.sol)**
 #### **Features:**
-- **Peer-to-Peer Transactions:** Secure escrow-based transfers.
-- **Fee Deduction:** Charges a **0.15% fee** on each transaction.
-- **Liquidity Reinvestment:** **50% of fees are sent to the liquidity pool.**
-- **Admin-Controlled Escrow Release.**
+- **$25 micro-loans** via escrow.
+- **1.5% origination fee** on loans.
+- **Automated repayment tracking**.
 
 #### **Integration Guide:**
-- Deploy the contract with **LPE token and liquidity pool address**.
-- Use `createEscrow(address receiver, uint256 amount)` to lock funds in escrow.
-- Use `releaseEscrow(uint256 escrowId)` (admin-only) to complete a transaction.
-- Call `reinvestFees()` to send fees to the liquidity pool.
-
----
-
-### 4. **Micro-Lending Escrow Contract (LPEMicroLendingEscrow.sol)**
-#### **Features:**
-- **Loan System:** Users can lend and borrow LPE tokens.
-- **1.5% Origination Fee:** Deducted on loan creation.
-- **Secured Repayments:** Borrowers must repay directly to the contract.
-
-#### **Integration Guide:**
-- Deploy the contract with **LPE token address**.
 - Use `createLoan(address borrower, uint256 amount)` to initiate a loan.
-- Use `repayLoan(uint256 loanId)` to repay the loan.
-- Admins can **monitor active loans and liquidate defaults.**
+- Use `repayLoan(uint256 loanId)` to mark a loan as paid.
+- Admins can **monitor active loans and enforce repayments**.
 
 ---
 
-### 5. **Staking Contract (LPEStaking.sol)**
+### 4. **Staking Contract (LPEStaking.sol)**
 #### **Features:**
-- **Stake LPE for Fee Discounts:** Reduces transaction fees.
-- **Staking Tiers:** More LPE staked = Lower fees.
-- **Flexible Unstaking:** Users can unstake anytime.
+- **Reduces trading fees for stakers**.
+- **0.15% fee for non-stakers, 0.1% for 50+ LPE stakers**.
+- **Stake lock mechanism for consistent participation.**
 
 #### **Integration Guide:**
-- Deploy the contract with **LPE token address**.
-- Use `stake(uint256 amount)` to lock LPE tokens.
+- Use `stake(uint256 amount)` to lock LPE.
 - Use `unstake(uint256 amount)` to withdraw staked tokens.
-- Implement logic to apply **discounts based on staking levels.**
+- Implement **discount logic** in P2P Escrow.
 
 ---
 
-## Liquidity Pool Reinvestment Mechanism
-- **50% of all fees collected from transactions and lending are automatically reinvested into the liquidity pool.**
-- Helps build **organic liquidity** and **improves token stability.**
+### 5. **Decentralized Autonomous Organization (DAO) (LPEDAO.sol)**
+#### **Features:**
+- **1 LPE = 1 Vote (Quadratic Voting)**.
+- **51% majority required** to resolve disputes.
+- **Transparent on-chain governance** for transactions and loans.
 
-## Security Considerations
-- Ensure **proper role management** (MINTER, PAUSER, ADMIN roles).
-- Use **multi-sig wallets** for high-risk operations.
-- Regular **audits** are recommended before deployment.
-
-## Deployment Steps
-1. Deploy **LPEToken** and note its contract address.
-2. Deploy **WrappedLPE**, linking it to the **LPEToken address**.
-3. Deploy **LPEEscrow**, **MicroLendingEscrow**, and **LPEStaking**, linking them to **LPEToken**.
-4. Configure liquidity pools and admin accounts.
-5. Integrate staking fee discounts into transaction logic.
-6. Test transactions on a testnet before launching on the mainnet.
+#### **Integration Guide:**
+- Use `createDispute(uint256 escrowId or loanId, string reason)` to initiate a dispute.
+- Use `voteOnDispute(uint256 disputeId, bool support)` for voting.
+- Automatically **enforce majority decision** after voting.
 
 ---
+
+## Liquidity & Fee Reinvestment
+- **10% of fees → USDC gifts** (max **$5/user/year**) for VisionX learning.
+- **40% of fees → audits & platform growth.**
+- **50% of fees → platform reserves.**
+
+---
+
+## Security Measures
+- **Multi-sig Security:** Minting and burning require **2/2 approval** (developer + founder).
+- **AMM and liquidity pool disabled**.
+- **Regular audits & compliance checks**.
+
+---
+
+## Deployment & Integration Guide
+1. **Deploy LPEToken** first, as all other contracts depend on it.
+2. **Deploy LPEEscrow, Micro-Lending, Staking, and DAO** contracts.
+3. **Configure staking fee discounts in Escrow transactions**.
+4. **Enable dispute resolution through DAO voting**.
+5. **Test transactions and governance on a testnet** before mainnet deployment.
+
+
 
 ### **Prerequisites**
 1. Install [Node.js](https://nodejs.org/) and npm.
@@ -123,7 +127,7 @@ npx hardhat compile
 ### **Deployment**
 Deploy the contract to BSC:
 ```bash
-npx hardhat ignition deploy ignition/modules/StableCoin.js --network arbi_mainnet --parameters ignition/parameters.json --verify
+npx hardhat ignition deploy ignition/modules/LPESmartContracts.js --network arbi_testnet --parameters ignition/parameters.json --verify
 ```
 
 ---
@@ -152,9 +156,7 @@ API_KEY=YourARBIScanAPIKey
 
 ## **Future Enhancements**
 
-- Governance System: Enable community voting for liquidity decisions.
 
-- Auto-compounding Staking Rewards.
 
 - NFT Collateral for Micro-Lending.
 
